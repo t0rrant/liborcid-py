@@ -59,7 +59,8 @@ class ORCID:
     # Validate ORCID ID as XXXX-XXXX-XXXX-XXXX where X is an integer from 0 to 9
     @staticmethod
     def validate_orcid(orcid_id):
-        if re.compile("([0-9]{4}-){3}[0-9]{4}").match(orcid_id).group() == orcid_id:
+        match = re.compile("([0-9]{4}-){3}[0-9]{4}").match(orcid_id)
+        if match and match.group() == orcid_id:
             return True
         else:
             return False

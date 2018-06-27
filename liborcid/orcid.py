@@ -3,8 +3,8 @@
 """Provides ORCID, a simple class to fetch records from the ORCID database
 """
 
-import sys
 from exceptions import UserWarning
+import re
 import requests
 
 __author__ = 'Manuel Torrinha'
@@ -22,16 +22,20 @@ class HTTPException(Exception):
 
 class ORCID:
     config = dict()
+    orcid_id = str()
 
-    def __init__(self):
+    def __init__(self, orcid_id):
         self.config['uri'] = 'https://pub.orcid.org'
-        self.config['works'] = 'works'
+        if self.validate_orcid(orcid_id):
+            self.orcid_id = orcid_id
+        else:
+            raise AttributeError('Please provide a valid ORCID ID')
 
-    def get_works(self, orcid_id=None):
-        if orcid_id is None:
-            raise UserWarning('Provide a valid ORCID identifier, passed {}'.format(orcid_id))
+    '''Fetch all works associated with a specific ORCID id
+    '''
+    def get_works(self):
 
-        r = requests.get("{}/{}/{}".format(self.config['uri'], orcid_id, self.config['works']),
+        r = requests.get("{}/{}/{}".format(self.config['uri'], self.orcid_id, 'works'),
                          headers={'Accept': 'application/orcid+json'})
         if r.status_code == 200:
             works = r.json()['group']
@@ -39,11 +43,23 @@ class ORCID:
             raise HTTPException('Error fetching data, status code: {}'.format(r.status_code))
         return works
 
+    '''Fetch a specific work with citations and contributors included
+    '''
+    def get_work(self, put_code):
+        if not put_code:
+            raise UserWarning('Provide a valid ORCID work put code, passed {} for id {}')
+        r = requests.get("{}/{}/{}/{}".format(self.config['uri'], self.orcid_id, 'work', put_code),
+                         headers={'Accept': 'application/orcid+json'})
+        if r.status_code == 200:
+            work = r.json()
+        else:
+            raise HTTPException('Error fetching data, status code: {}'.format(r.status_code))
+        return work
 
-if __name__ == "__main__":
-    if len(sys.argv) != 1:
-        raise UserWarning('{} takes one mandatory argument, the member\'s ORCID id'.format(sys.argv[0]))
-
-    _id = sys.argv[1]
-    o = ORCID()
-    o.get_works(orcid_id=_id)
+    # Validate ORCID ID as XXXX-XXXX-XXXX-XXXX where X is an integer from 0 to 9
+    @staticmethod
+    def validate_orcid(orcid_id):
+        if re.compile("([0-9]{4}-){3}[0-9]{4}").match(orcid_id).group() == orcid_id:
+            return True
+        else:
+            return False

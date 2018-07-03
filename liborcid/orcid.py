@@ -56,10 +56,12 @@ class ORCID:
             raise HTTPException('Error fetching data, status code: {}'.format(r.status_code))
         return work
 
-    # Validate ORCID ID as XXXX-XXXX-XXXX-XXXX where X is an integer from 0 to 9
+    # Validate ORCID ID as XXXX-XXXX-XXXX-XXXZ
+    # where X is an integer from 0 to 9 and Z can be either an integer from 0 to 9 or X
+    # TODO checksum validation: refer to https://support.orcid.org/knowledgebase/articles/116780-structure-of-the-orcid-identifier
     @staticmethod
     def validate_orcid(orcid_id):
-        match = re.compile("([0-9]{4}-){3}[0-9]{4}").match(orcid_id)
+        match = re.compile("([0-9]{4}-){3}[0-9]{3}[0-9X]").match(orcid_id)
         if match and match.group() == orcid_id:
             return True
         else:
